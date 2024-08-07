@@ -5,6 +5,7 @@ open Lake DSL
 package mathlib where
   leanOptions := #[
     ⟨`pp.unicode.fun, true⟩, -- pretty-prints `fun a ↦ b`
+    ⟨`pp.proofs.withType, false⟩,
     ⟨`autoImplicit, false⟩,
     ⟨`relaxedAutoImplicit, false⟩
   ]
@@ -12,7 +13,11 @@ package mathlib where
   -- so they can be enabled in CI and disabled locally or vice versa.
   -- Warning: Do not put any options here that actually change the olean files,
   -- or inconsistent behavior may result
-  -- weakLeanArgs := #[]
+  weakLeanArgs :=
+    if get_config? CI |>.isSome then
+      #["-DwarningAsError=true"]
+    else
+      #[]
 
 /-!
 ## Mathlib dependencies on upstream projects.
@@ -27,6 +32,7 @@ require aesop from git "https://github.com/leanprover-community/aesop" @ "master
 require proofwidgets from git "https://github.com/leanprover-community/ProofWidgets4" @ "v0.0.36"
 require Cli from git "https://github.com/leanprover/lean4-cli" @ "main"
 require importGraph from git "https://github.com/leanprover-community/import-graph.git" @ "main"
+require REPL from git "https://github.com/xinhjBrant/repl.git" @ "deepseek"
 
 /-!
 ## Mathlib libraries
@@ -35,10 +41,8 @@ require importGraph from git "https://github.com/leanprover-community/import-gra
 @[default_target]
 lean_lib Mathlib
 
--- NB. When adding further libraries, check if they should be excluded from `getLeanLibs` in
--- `Mathlib/Util/GetAllModules.lean`.
 lean_lib Cache
-lean_lib LongestPole
+lean_lib MathlibExtras
 lean_lib Archive
 lean_lib Counterexamples
 /-- Additional documentation in the form of modules that only contain module docstrings. -/
@@ -52,6 +56,7 @@ lean_lib docs where
 /-- `lake exe cache get` retrieves precompiled `.olean` files from a central server. -/
 lean_exe cache where
   root := `Cache.Main
+  supportInterpreter := true
 
 /-- `lake exe checkYaml` verifies that all declarations referred to in `docs/*.yaml` files exist. -/
 lean_exe checkYaml where
